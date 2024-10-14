@@ -1,0 +1,57 @@
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+
+// Create the PCA9685 object using default I2C address 0x40
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+
+// Define min and max servo pulse lengths (for MG966R servos)
+#define SERVOMIN  150 // Minimum pulse length count (adjust if necessary)
+#define SERVOMAX  600 // Maximum pulse length count (adjust if necessary)
+
+// Set the initial servo position (0 degrees)
+int currentAngle = 90; // Neutral position (90 degrees)
+int targetAngle = 0;   // Target position for movement
+bool forward = true;   // Direction of movement
+
+// Function to convert degrees to pulse width
+int degreeToPulse(int degree) {
+  return map(degree, 0, 180, SERVOMIN, SERVOMAX);
+}
+
+void setup() {
+  Serial.begin(9600);
+  // Initialize the PCA9685
+  pwm.begin();
+  pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz
+  
+  // Move servos to initial position (90 degrees)
+  int pulse = degreeToPulse(currentAngle);
+  pwm.setPWM(0, 0, pulse);  // Channel 0
+  pwm.setPWM(1, 0, pulse);  // Channel 1
+}
+
+void loop() {
+  // Move servos forward or backward by 5 degrees
+  if (forward) {
+    targetAngle = currentAngle + 5;
+    if (targetAngle >= 95) {
+      forward = false;  // Switch direction
+    }
+  } else {
+    targetAngle = currentAngle - 5;
+    if (targetAngle <= 85) {
+      forward = true;  // Switch direction
+    }
+  }
+  
+  // Convert the target angle to pulse and set the servos
+  int pulse = degreeToPulse(targetAngle);
+  pwm.setPWM(0, 0, pulse);  // Channel 0
+  pwm.setPWM(1, 0, pulse);  // Channel 1
+  
+  // Update the current angle
+  currentAngle = targetAngle;
+  
+  // Wait before moving again
+  delay(500);  // Adjust the delay if needed for smoother motion
+}
